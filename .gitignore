@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.pdb
+appsettings.Local.json
+native/*.dll
+native/*.so
+native/HCAapSDKCom/
+data/
+logs/

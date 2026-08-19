@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Managed wrapper around Hikvision HCISUP SDK. Verify licensing/compatibility with your vendor SDK. -->
+    <PackageReference Include="QuickNV.HikvisionISUPSDK" Version="1.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="native\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- ISAPI major/minor event catalog, editable without a rebuild. -->
+    <None Update="config\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
