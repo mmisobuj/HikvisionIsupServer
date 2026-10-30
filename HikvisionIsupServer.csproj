@@ -21,4 +21,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <Target Name="EnsureOpenSslShim" AfterTargets="Build">
+    <Exec Command="bash &quot;$(MSBuildProjectDirectory)/scripts/ensure-openssl-shim.sh&quot; &quot;$(TargetDir)runtimes/linux-x64/native&quot;" Condition="'$(OS)' != 'Windows_NT'" />
+  </Target>
 </Project>
