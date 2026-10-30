@@ -18,6 +18,9 @@ public sealed class IsupOptions
     /// </summary>
     public string? IsupKey { get; set; }
 
+    /// <summary>Serial numbers to pre-seed for ISUP 5.0 MQTT master-key search (alarm MQTT username).</summary>
+    public string[] KnownDeviceSerials { get; set; } = Array.Empty<string>();
+
     /// <summary>ISUP alarm/event channel. This is what carries attendance punches.</summary>
     public AlarmOptions Alarm { get; set; } = new();
 
@@ -60,6 +63,13 @@ public sealed class AlarmOptions
 
     /// <summary>Advertised TCP/MQTT port. 0 uses <see cref="ListenPort"/>.</summary>
     public short AdvertisedPort { get; set; }
+
+    /// <summary>
+    /// Port written into NET_EHOME_SERVER_INFO on ENUM_DEV_ON for event upload.
+    /// When DAS must use the CMS port (ISUP 5.0), set this to the AMS listen port.
+    /// 0 falls back to AdvertisedPort/ListenPort.
+    /// </summary>
+    public short EventPort { get; set; }
 
     /// <summary>Advertised UDP port. 0 uses <see cref="UdpPort"/>.</summary>
     public short AdvertisedUdpPort { get; set; }

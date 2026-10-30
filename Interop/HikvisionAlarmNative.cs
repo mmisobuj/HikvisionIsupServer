@@ -55,6 +55,7 @@ public static class HikvisionAlarmNative
     /// <summary>NET_EALARM_SetSDKLocalCfg: directory holding the HCAapSDKCom components.</summary>
     public const int LOCAL_CFG_AAP_SDK_COM_PATH = 5;
 
+
     /// <summary>NET_EHOME_ALARM_LISTEN_PARAM.byProtocolType.</summary>
     public const byte PROTOCOL_TCP = 0;
     public const byte PROTOCOL_UDP = 1;
@@ -69,6 +70,7 @@ public static class HikvisionAlarmNative
     private const int SerialLen = 12;
 
     // ---- Structures ---------------------------------------------------------------------
+
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -229,6 +231,17 @@ public static class HikvisionAlarmNative
 
     public static bool SetSDKLocalCfg(int enumType, IntPtr lpInBuff) =>
         IsWindows ? SetSDKLocalCfg_Win(enumType, lpInBuff) : SetSDKLocalCfg_Linux(enumType, lpInBuff);
+
+    [DllImport(WindowsDll, EntryPoint = "NET_EALARM_GetSDKLocalCfg", CallingConvention = CallingConvention.StdCall)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetSDKLocalCfg_Win(int enumType, IntPtr lpOutBuff);
+
+    [DllImport(LinuxSo, EntryPoint = "NET_EALARM_GetSDKLocalCfg", CallingConvention = CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetSDKLocalCfg_Linux(int enumType, IntPtr lpOutBuff);
+
+    public static bool GetSDKLocalCfg(int enumType, IntPtr lpOutBuff) =>
+        IsWindows ? GetSDKLocalCfg_Win(enumType, lpOutBuff) : GetSDKLocalCfg_Linux(enumType, lpOutBuff);
 
     [DllImport(WindowsDll, EntryPoint = "NET_EALARM_SetDeviceSessionKey", CallingConvention = CallingConvention.StdCall)]
     [return: MarshalAs(UnmanagedType.Bool)]

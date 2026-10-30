@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using HikvisionIsupServer.Interop;
@@ -76,6 +77,7 @@ public sealed class IsupAlarmService : IDisposable
 
             _initialised = true;
             ConfigureNativeLogging();
+            ConfigureAccessSecurity();
 
             _callback = OnAlarm;
 
@@ -152,6 +154,9 @@ public sealed class IsupAlarmService : IDisposable
 
             var msg = Marshal.PtrToStructure<NET_EHOME_ALARM_MSG>(pAlarmMsg);
             var alarmType = (int)msg.dwAlarmType;
+            _logger.LogInformation(
+                "Alarm callback handle={Handle} type={Type} infoLen={InfoLen} xmlLen={XmlLen} httpLen={HttpLen}",
+                handle, alarmType, msg.dwAlarmInfoLen, msg.dwXmlBufLen, msg.dwHttpUrlLen);
 
             // ISUP 4.0 delivers ISAPI events with the picture data still attached, and marks
             // them only by supplying an HTTP URL. The vendor demo re-tags them the same way.
@@ -307,8 +312,13 @@ public sealed class IsupAlarmService : IDisposable
 
         _logger.LogDebug("ISUP native directory: {Directory}", nativeDirectory);
 
+        // Prefer OpenSSL 1.1 (exports OpenSSL_version). SDK 1.0 libs cause EHOME50_ERROR on MQTT.
         var crypto = IsWindows ? "libeay32.dll" : "libcrypto.so";
         var ssl = IsWindows ? "ssleay32.dll" : "libssl.so";
+        if (!IsWindows && !File.Exists(Path.Combine(nativeDirectory, crypto)))
+            crypto = "libcrypto.so";
+        if (!IsWindows && !File.Exists(Path.Combine(nativeDirectory, ssl)))
+            ssl = "libssl.so";
 
         SetPathConfig(
             "libeay/libcrypto", INIT_CFG_LIBEAY_PATH, Path.Combine(nativeDirectory, crypto), SetSDKInitCfg);
@@ -355,6 +365,45 @@ public sealed class IsupAlarmService : IDisposable
         finally
         {
             Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+
+    private void ConfigureAccessSecurity()
+    {
+        try
+        {
+            // HCISUPAlarm 2.5.0.35: ACTIVE_ACCESS_SECURITY = 0, struct dwSize = 132
+            // byAccessSecurity = 0 allows MQTT PUBLISH (punches); non-zero rejects them.
+            const int ActiveAccessSecurity = 0;
+            const int DwSize = 132;
+            var ptr = Marshal.AllocHGlobal(DwSize);
+            try
+            {
+                for (var i = 0; i < DwSize; i++)
+                    Marshal.WriteByte(ptr, i, 0);
+                Marshal.WriteInt32(ptr, 0, DwSize);
+                Marshal.WriteByte(ptr, 4, 0);
+                if (SetSDKLocalCfg(ActiveAccessSecurity, ptr))
+                {
+                    _logger.LogInformation(
+                        "ISUP alarm AccessSecurity=0 (enum {Enum}, dwSize={Size}).",
+                        ActiveAccessSecurity, DwSize);
+                    return;
+                }
+
+                _logger.LogWarning(
+                    "ACTIVE_ACCESS_SECURITY SetSDKLocalCfg returned false (err={Err}).",
+                    GetLastError());
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "ConfigureAccessSecurity failed; continuing.");
         }
     }
 
